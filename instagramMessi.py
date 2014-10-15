@@ -12,7 +12,6 @@ tag = 'leomessi'
 num_iterations = 1000
 count = 50
 
-#data = dict()
 try:
 	dataFile = open('data.pk1', 'rb')
 	data = pickle.load(dataFile)
