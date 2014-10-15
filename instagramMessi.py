@@ -2,52 +2,72 @@
 
 from instagram.client import InstagramAPI
 from urlparse import urlparse
-import pickle
+import pickle, os
 import networkx as nx
 import keys
 
 api = InstagramAPI(access_token=keys.access_token)
 
-tag = 'leomessi'
+tags = ['leomessi','cristiano']
 num_iterations = 1000
-count = 50
+count = 200
 
 try:
-	dataFile = open('data.pk1', 'rb')
+	dataFile = open('combined.pk1', 'r+b')
+	mediaSeen = open('mediaSeen.pk1', 'r+b')
 	data = pickle.load(dataFile)
-	print 'successfully loaded pickle'
+	mediaSeen = pickle.load(dataFile)
+	print 'successfully loaded pickles'
 except:
+	dataFile = open('combined.pk1', 'wb')
+	mediaFile = open('mediaSeen.pk1', 'wb')
 	data = dict()
+	mediaSeen = set()
 
-def getData(mediaList):
+def getData(mediaList,tag):
 	for m in mediaList:
 		mediadata = dict()
 		#this is the key for the data dictionary
 		mediaID = m.id
-		#put stuff in mediadata
-		if hasattr(m, 'location'):
-			mediadata['location'] = m.location
-		mediadata['user'] = m.user.username
-		mediadata['like_count'] = m.like_count
-		mediadata['comment_count'] = m.comment_count
-		if mediaID in data.keys():
+		if mediaID in mediaSeen:
 			continue
 		else:
-			data[mediaID]=mediadata
+			mediaSeen.add(mediaID)
+			screenName = m.user.username
+			likes = [u.username for u in m.likes]
+			if screenName in data.keys():
+				data[screenName]['tags'].append(tag)
+				if hasattr(m, 'location'):
+					data[screenName]['location'].append(m.location)
+				for l in likes:
+					data[screenName]['likes'].append(l)
+			else:
+				data[screenName] = dict()
+				data[screenName]['tags']=list()
+				data[screenName]['location']=list()
+				data[screenName]['tags'].append(tag)
+				if hasattr(m, 'location'):
+					data[screenName]['location'].append(m.location)
+				data[screenName]['likes']=likes
+			
+for t in tags:
+	max_tag_id = 0
+	ans = api.tag_recent_media(count, max_tag_id, t)
+	getData(ans[0],t)
 
-max_tag_id = 0
-ans = api.tag_recent_media(count, max_tag_id, tag)
-getData(ans[0])
-
-parsed = urlparse(ans[1])
-params = {a:b for a,b in [x.split('=') for x in parsed.query.split('&')]}
+	parsed = urlparse(ans[1])
+	params = {a:b for a,b in [x.split('=') for x in parsed.query.split('&')]}
 
 for i in range(num_iterations):
-	max_tag_id = int(params['max_tag_id'])
-    	ans = api.tag_recent_media(200, max_tag_id-1, tag)
-    	getData(ans[0])
+	for t in tags:
+		max_tag_id = int(params['max_tag_id'])	
+		ans = api.tag_recent_media(count, max_tag_id-1, t)
+		getData(ans[0],t)
 
-print data
-output = open('data.pk1', 'wb')
-pickle.dump(data, output)
-output.close()
+		parsed = urlparse(ans[1])
+		params = {a:b for a,b in [x.split('=') for x in parsed.query.split('&')]}
+
+pickle.dump(data, dataFile)
+pickle.dump(mediaSeen, mediaFile)
+dataFile.close()
+mediaFile.close()
