@@ -15,7 +15,7 @@ count = 50
 try:
 	dataFile = open('data.pk1', 'rb')
 	data = pickle.load(dataFile)
-	print 'successful!!!'
+	print 'successfully loaded pickle'
 except:
 	data = dict()
 
