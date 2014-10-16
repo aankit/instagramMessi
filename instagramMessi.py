@@ -9,7 +9,7 @@ import keys
 api = InstagramAPI(access_token=keys.access_token)
 
 tags = ['leomessi','cristiano']
-num_iterations = 1000
+num_iterations = 100
 count = 200
 
 try:
