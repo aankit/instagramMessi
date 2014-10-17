@@ -23,7 +23,7 @@ try:
 	print 'opening works'
 	data = pickle.load(dataFile)
 	mediaSeen = pickle.load(mediaFile)
-	max_tag_id = pickle.load(maxTagFile)
+	prevMax = pickle.load(maxTagFile)
 	print 'loaded data!'
 	dataFile.close()
 	mediaFile.close()
@@ -33,9 +33,10 @@ except:
 	print 'new new new'
 	mediaSeen = set()
 	data = dict()
-	max_tag_id = 0
 
+print prevMax
 count = 0
+max_tag_id = 0
 def getData(mediaList,tag):
 	for m in mediaList:
 		mediadata = dict()
@@ -62,30 +63,34 @@ def getData(mediaList,tag):
 				if hasattr(m, 'location'):
 					data[screenName]['location'].append(m.location)
 				data[screenName]['likes']=likes
-if max_tag_id = 0:			
+
+for t in tags:
+	max_tag_id = 0
+	ans = api.tag_recent_media(count, max_tag_id, t)
+	getData(ans[0],t)
+
+	parsed = urlparse(ans[1])
+	params = {a:b for a,b in [x.split('=') for x in parsed.query.split('&')]}
+
+for i in range(num_iterations):
 	for t in tags:
-		max_tag_id = 0
-		ans = api.tag_recent_media(count, max_tag_id, t)
+		ans = api.tag_recent_media(count, max_tag_id-1, t)
 		getData(ans[0],t)
 
 		parsed = urlparse(ans[1])
-		params = {a:b for a,b in [x.split('=') for x in parsed.query.split('&')]}
+		params = {a:b for a,b in [x.split('=') for x in parsed.query.split('&')]}	
+		max_tag_id = int(params['max_tag_id'])	
 
-else:
-	for i in range(num_iterations):
-		for t in tags:
-			ans = api.tag_recent_media(count, max_tag_id-1, t)
-			getData(ans[0],t)
-
-			parsed = urlparse(ans[1])
-			params = {a:b for a,b in [x.split('=') for x in parsed.query.split('&')]}	
-			max_tag_id = int(params['max_tag_id'])	
+prevMax = max_tag_id
+print prevMax
+iax_tag_id = 0
+iax_tag_id = 0
 maxTagFile = open('maxTag.pk1', 'wb')
 dataFile = open('combined.pk1', 'wb')
 mediaFile = open('mediaSeen.pk1', 'wb')
 pickle.dump(data, dataFile)
 pickle.dump(mediaSeen, mediaFile)
-pickle.dump(max_tag_id, maxTagFile)
+pickle.dump(max_tag_id, prevTag)
 dataFile.close()
 mediaFile.close()
 maxTagFile.close()
