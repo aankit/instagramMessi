@@ -12,31 +12,6 @@ tags = ['leomessi','cristiano']
 num_iterations = 1000
 count = 200
 
-#data = dict()
-#mediaSeen = set()
-
-try:
-	print 'here'
-	dataFile = open('combined.pk1', 'rb')
-	mediaFile = open('mediaSeen.pk1', 'rb')
-	maxTagFile = open('maxTag.pk1', 'rb')
-	print 'opening works'
-	data = pickle.load(dataFile)
-	mediaSeen = pickle.load(mediaFile)
-	prevMax = pickle.load(maxTagFile)
-	print 'loaded data!'
-	dataFile.close()
-	mediaFile.close()
-	maxTagFile.close()
-	print 'successfully loaded pickles'
-except:
-	print 'new new new'
-	mediaSeen = set()
-	data = dict()
-
-print prevMax
-count = 0
-max_tag_id = 0
 def getData(mediaList,tag):
 	for m in mediaList:
 		mediadata = dict()
@@ -64,33 +39,55 @@ def getData(mediaList,tag):
 					data[screenName]['location'].append(m.location)
 				data[screenName]['likes']=likes
 
-for t in tags:
-	max_tag_id = 0
-	ans = api.tag_recent_media(count, max_tag_id, t)
-	getData(ans[0],t)
+try:
+	print 'trying to open pickles'
+	dataFile = open('combined.pk1', 'rb')
+	mediaFile = open('mediaSeen.pk1', 'rb')
+	maxTagFile = open('maxTag.pk1', 'rb')
+	print 'opening works'
+	data = pickle.load(dataFile)
+	mediaSeen = pickle.load(mediaFile)
+	maxTags = pickle.load(maxTagFile)
+	print 'loaded data!'
+	print maxTags
+	dataFile.close()
+	mediaFile.close()
+	maxTagFile.close()
+	print 'successfully loaded and closed pickles'
+except:
+	print 'no pickles found'
+	mediaSeen = set()
+	data = dict()
+	maxTags = {'leomessi': 0,'cristiano': 0}
+	for t in tags:
+		ans = api.tag_recent_media(count, maxTags[t], t)
+		getData(ans[0],t)
 
-	parsed = urlparse(ans[1])
-	params = {a:b for a,b in [x.split('=') for x in parsed.query.split('&')]}
+		parsed = urlparse(ans[1])
+		params = {a:b for a,b in [x.split('=') for x in parsed.query.split('&')]}
+		maxTags[t] = int(params['max_tag_id'])	
+
+print maxTags
 
 for i in range(num_iterations):
 	for t in tags:
-		ans = api.tag_recent_media(count, max_tag_id-1, t)
+		ans = api.tag_recent_media(count,maxTags[t]-1, t)
 		getData(ans[0],t)
 
 		parsed = urlparse(ans[1])
 		params = {a:b for a,b in [x.split('=') for x in parsed.query.split('&')]}	
-		max_tag_id = int(params['max_tag_id'])	
+		maxTags[t] = int(params['max_tag_id'])	
 
-prevMax = max_tag_id
-print prevMax
-iax_tag_id = 0
-iax_tag_id = 0
+print maxTags
+print 'opening pickle files for writing'
 maxTagFile = open('maxTag.pk1', 'wb')
 dataFile = open('combined.pk1', 'wb')
 mediaFile = open('mediaSeen.pk1', 'wb')
+print 'dumping data into pickle files'
 pickle.dump(data, dataFile)
 pickle.dump(mediaSeen, mediaFile)
-pickle.dump(max_tag_id, prevTag)
+pickle.dump(maxTags, maxTagFile)
+print 'closing pickle files'
 dataFile.close()
 mediaFile.close()
 maxTagFile.close()
